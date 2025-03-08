@@ -44,6 +44,16 @@ def prepare_supabase_env():
     print("Copying .env in root to .env in supabase/docker...")
     shutil.copyfile(env_example_path, env_path)
 
+def overwrite_supabase_docker_compose():
+    """Copy and backup supabase docker compose"""
+    dc_example_path = os.path.join("docker-compose.yml.supabase-example")
+    dc_path_backup = os.path.join("supabase", "docker", "docker-compose.yml")
+    dc_path_backup_old = os.path.join("supabase", "docker", "docker-compose.yml.old")
+    print("Backing up docker-compose.yml in supabase directory to docker-compose.yml.old in supabase/docker...")
+    shutil.copyfile(dc_path_backup, dc_path_backup_old)
+    print("Copying docker-compose.yml.supabase-example in root to docker-compose.yml in supabase/docker...")
+    shutil.copyfile(dc_example_path, dc_path_backup)
+
 def stop_existing_containers():
     """Stop and remove existing containers for our unified project ('localai')."""
     print("Stopping and removing existing containers for the unified project 'localai'...")
@@ -79,17 +89,19 @@ def main():
 
     clone_supabase_repo()
     prepare_supabase_env()
-    stop_existing_containers()
-    
-    # Start Supabase first
-    start_supabase()
-    
-    # Give Supabase some time to initialize
-    print("Waiting for Supabase to initialize...")
-    time.sleep(10)
-    
-    # Then start the local AI services
-    start_local_ai(args.profile)
+    overwrite_supabase_docker_compose()
+
+    # stop_existing_containers()
+    #
+    # # Start Supabase first
+    # start_supabase()
+    #
+    # # Give Supabase some time to initialize
+    # print("Waiting for Supabase to initialize...")
+    # time.sleep(10)
+    #
+    # # Then start the local AI services
+    # start_local_ai(args.profile)
 
 if __name__ == "__main__":
     main()

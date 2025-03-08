@@ -95,6 +95,21 @@ Before running the services, you need to set up your environment variables for S
 
 ---
 
+
+
+**** tgetz Added Comment - Do this first
+
+```bash
+python -m venv env
+source env/bin/activate
+
+docker network create common_network
+```
+
+---
+
+
+
 The project includes a `start_services.py` script that handles starting both the Supabase and local AI services. The script accepts a `--profile` flag to specify which GPU configuration to use.
 
 ### For Nvidia GPU users

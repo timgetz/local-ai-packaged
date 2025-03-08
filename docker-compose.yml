@@ -26,7 +26,8 @@ x-ollama: &service-ollama
     - 11434:11434
   volumes:
     - ollama_storage:/root/.ollama
-
+  networks:
+    - common_network
 x-init-ollama: &init-ollama
   image: ollama/ollama:latest
   container_name: ollama-pull-llama
@@ -40,6 +41,8 @@ x-init-ollama: &init-ollama
     # echo "FROM qwen2.5:7b-instruct-q4_K_M\n\nPARAMETER num_ctx 8096" > Modelfile
     # ollama create qwen2.5:7b-8k -f ./Modelfile
     # Change the name of the LLM and num_ctx as you see fit.
+  networks:
+    - common_network
 
 services:
   flowise:
@@ -51,10 +54,12 @@ services:
     ports:
         - 3001:3001
     extra_hosts:
-      - "host.docker.internal:host-gateway"        
+      - "host.docker.internal:host-gateway"
     volumes:
         - ~/.flowise:/root/.flowise
     entrypoint: /bin/sh -c "sleep 3; flowise start"
+    networks:
+      - common_network
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -66,6 +71,8 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - open-webui:/app/backend/data
+    networks:
+      - common_network
 
   n8n-import:
     <<: *service-n8n
@@ -75,7 +82,9 @@ services:
       - "-c"
       - "n8n import:credentials --separate --input=/backup/credentials && n8n import:workflow --separate --input=/backup/workflows"
     volumes:
-      - ./n8n/backup:/backup  
+      - ./n8n/backup:/backup
+    networks:
+      - common_network
 
   n8n:
     <<: *service-n8n
@@ -90,6 +99,8 @@ services:
     depends_on:
       n8n-import:
         condition: service_completed_successfully
+    networks:
+      - common_network
 
   qdrant:
     image: qdrant/qdrant
@@ -99,6 +110,8 @@ services:
       - 6333:6333
     volumes:
       - qdrant_storage:/qdrant/storage
+    networks:
+      - common_network
 
   ollama-cpu:
     profiles: ["cpu"]
@@ -114,6 +127,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - common_network
 
   ollama-gpu-amd:
     profiles: ["gpu-amd"]
@@ -122,18 +137,24 @@ services:
     devices:
       - "/dev/kfd"
       - "/dev/dri"
+    networks:
+      - common_network
 
   ollama-pull-llama-cpu:
     profiles: ["cpu"]
     <<: *init-ollama
     depends_on:
       - ollama-cpu
+    networks:
+      - common_network
 
   ollama-pull-llama-gpu:
     profiles: ["gpu-nvidia"]
     <<: *init-ollama
     depends_on:
       - ollama-gpu
+    networks:
+      - common_network
 
   ollama-pull-llama-gpu-amd:
     profiles: [gpu-amd]
@@ -141,3 +162,8 @@ services:
     image: ollama/ollama:rocm
     depends_on:
      - ollama-gpu-amd
+    networks:
+      - common_network
+networks:
+  common_network:
+    external: true
