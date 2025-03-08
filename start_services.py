@@ -54,6 +54,17 @@ def overwrite_supabase_docker_compose():
     print("Copying docker-compose.yml.supabase-example in root to docker-compose.yml in supabase/docker...")
     shutil.copyfile(dc_example_path, dc_path_backup)
 
+def create_common_network():
+    """Stop and remove existing containers for our unified project ('localai')."""
+    print("Removing docker network: common_network (if exists)...")
+    run_command([
+        "docker", "network", "rm", "-f", "common_network"
+    ])
+    print("Creating docker network: common_network...")
+    run_command([
+        "docker", "network", "create", "common_network"
+    ])
+
 def stop_existing_containers():
     """Stop and remove existing containers for our unified project ('localai')."""
     print("Stopping and removing existing containers for the unified project 'localai'...")
@@ -91,17 +102,19 @@ def main():
     prepare_supabase_env()
     overwrite_supabase_docker_compose()
 
-    # stop_existing_containers()
-    #
-    # # Start Supabase first
-    # start_supabase()
-    #
-    # # Give Supabase some time to initialize
-    # print("Waiting for Supabase to initialize...")
-    # time.sleep(10)
-    #
-    # # Then start the local AI services
-    # start_local_ai(args.profile)
+    stop_existing_containers()
+
+    create_common_network()
+
+    # Start Supabase first
+    start_supabase()
+
+    # Give Supabase some time to initialize
+    print("Waiting for Supabase to initialize...")
+    time.sleep(10)
+
+    # Then start the local AI services
+    start_local_ai(args.profile)
 
 if __name__ == "__main__":
     main()
